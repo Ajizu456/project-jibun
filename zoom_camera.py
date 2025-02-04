@@ -2,6 +2,7 @@ import cv2
 import tkinter as tk
 from tkinter import Label, Button, messagebox, StringVar, OptionMenu
 from PIL import Image, ImageTk
+import time
 
 # Dictionary untuk terjemahan tombol
 LANGUAGES = {
@@ -23,7 +24,7 @@ LANGUAGES = {
 class KacaPembesarApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Kaca Pembesar Digital")
+        self.root.title("デジタル拡大鏡")
 
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
@@ -40,6 +41,12 @@ class KacaPembesarApp:
         # Label untuk menampilkan video
         self.label = Label(root)
         self.label.pack(fill="both", expand=True)
+
+         
+        # Label zoom
+        self.zoom_label = Label(root, text=f"Zoom: {self.zoom_factor:.1f}x", font=("Arial", 12, "bold"))
+        self.zoom_label.pack()
+        
         # untuk layouting tombol
         self.button_frame = tk.Frame(root)
         self.button_frame.pack(side="bottom", fill="x")
@@ -67,6 +74,11 @@ class KacaPembesarApp:
 
         # Tambahkan event listener untuk scroll zoom
         self.bind_mouse_wheel()
+         
+        # Keyboard shortcuts
+        self.root.bind("<Control-plus>", lambda event: self.zoom_in())
+        self.root.bind("<Control-minus>", lambda event: self.zoom_out())
+        self.root.bind("<Control-s>", lambda event: self.screenshot())
 
         # Perbarui teks tombol sesuai bahasa awal
         self.update_language("English")
@@ -116,13 +128,25 @@ class KacaPembesarApp:
         if self.zoom_factor > 1.0:
             self.zoom_factor -= 0.1
 
+    
     def screenshot(self):
         ret, frame = self.cap.read()
         if ret:
-            filename = "screenshot.png"
-            cv2.imwrite(filename, frame)
+            # Terapkan efek zoom yang sama seperti pada tampilan GUI
+            height, width = frame.shape[:2]
+            center_x, center_y = width // 2, height // 2
+            radius_x, radius_y = int(width // (2 * self.zoom_factor)), int(height // (2 * self.zoom_factor))
+            cropped_frame = frame[center_y - radius_y:center_y + radius_y, center_x - radius_x:center_x + radius_x]
+
+            # Perbesar kembali ke ukuran asli
+            zoomed_frame = cv2.resize(cropped_frame, (width, height), interpolation=cv2.INTER_LINEAR)
+
+            # Simpan screenshot hasil zoom
+            filename = f"screenshot_{time.strftime('%Y%m%d_%H%M%S')}.png"
+            cv2.imwrite(filename, zoomed_frame)
+
             lang = self.selected_lang.get()
-            messagebox.showinfo(LANGUAGES[lang]["screenshot"], LANGUAGES[lang]["screenshot_msg"])
+            messagebox.showinfo(LANGUAGES[lang]["screenshot"], f"{LANGUAGES[lang]['screenshot_msg']}: {filename}")
 
 
     def toggle_fullscreen(self, event=None):
