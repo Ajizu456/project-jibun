@@ -46,25 +46,6 @@ class KacaPembesarApp:
         # Label zoom
         self.zoom_label = Label(root, text=f"Zoom: {self.zoom_factor:.1f}x", font=("Arial", 12, "bold"))
         self.zoom_label.pack()
-        
-        # untuk layouting tombol
-        self.button_frame = tk.Frame(root)
-        self.button_frame.pack(side="bottom", fill="x")
-
-
-        # Tombol kontrol (akan diperbarui sesuai bahasa)
-        self.btn_zoom_in = Button(self.button_frame, text="Zoom In", command=self.zoom_in, width=12, height=2, font=("Arial", 14, "bold"))
-        self.btn_zoom_in.pack(side="left", expand=True, fill="x", padx=5, pady=5)
-
-        self.btn_zoom_out = Button(self.button_frame, text="Zoom Out", command=self.zoom_out, width=12, height=2, font=("Arial", 14, "bold"))
-        self.btn_zoom_out.pack(side="left", expand=True, fill="x", padx=5, pady=5)
-
-        self.btn_screenshot = Button(self.button_frame, text="Screenshot", command=self.screenshot, width=12, height=2, font=("Arial", 14, "bold"))
-        self.btn_screenshot.pack(side="left", expand=True, fill="x", padx=5, pady=5)
-
-        self.btn_exit = Button(self.button_frame, text="Exit", command=self.exit_program, width=12, height=2, font=("Arial", 14, "bold"))
-        self.btn_exit.pack(side="left", expand=True, fill="x", padx=5, pady=5)
-
 
 
         # Fullscreen mode dengan tombol F11 & ESC
@@ -86,11 +67,7 @@ class KacaPembesarApp:
         self.update_frame()
 
     def update_language(self, lang):
-        """ Update teks tombol berdasarkan bahasa yang dipilih """
-        self.btn_zoom_in.config(text=LANGUAGES[lang]["zoom_in"])
-        self.btn_zoom_out.config(text=LANGUAGES[lang]["zoom_out"])
-        self.btn_screenshot.config(text=LANGUAGES[lang]["screenshot"])
-        self.btn_exit.config(text=LANGUAGES[lang]["exit"])
+        pass
 
     def bind_mouse_wheel(self):
         self.root.bind("<MouseWheel>", self.mouse_zoom)  # Windows/Mac
@@ -123,31 +100,26 @@ class KacaPembesarApp:
     def zoom_in(self):
         if self.zoom_factor < 2.0:
             self.zoom_factor += 0.1
+            self.zoom_label.config(text=f"Zoom: {self.zoom_factor:.1f}x")
 
     def zoom_out(self):
         if self.zoom_factor > 1.0:
             self.zoom_factor -= 0.1
+            self.zoom_label.config(text=f"Zoom: {self.zoom_factor:.1f}x")
 
     
     def screenshot(self):
         ret, frame = self.cap.read()
         if ret:
-            # Terapkan efek zoom yang sama seperti pada tampilan GUI
             height, width = frame.shape[:2]
             center_x, center_y = width // 2, height // 2
             radius_x, radius_y = int(width // (2 * self.zoom_factor)), int(height // (2 * self.zoom_factor))
             cropped_frame = frame[center_y - radius_y:center_y + radius_y, center_x - radius_x:center_x + radius_x]
-
-            # Perbesar kembali ke ukuran asli
             zoomed_frame = cv2.resize(cropped_frame, (width, height), interpolation=cv2.INTER_LINEAR)
-
-            # Simpan screenshot hasil zoom
             filename = f"screenshot_{time.strftime('%Y%m%d_%H%M%S')}.png"
             cv2.imwrite(filename, zoomed_frame)
-
             lang = self.selected_lang.get()
-            messagebox.showinfo(LANGUAGES[lang]["screenshot"], f"{LANGUAGES[lang]['screenshot_msg']}: {filename}")
-
+            messagebox.showinfo("Screenshot", f"{LANGUAGES[lang]['screenshot_msg']}: {filename}")
 
     def toggle_fullscreen(self, event=None):
         self.fullscreen = not self.fullscreen
@@ -160,9 +132,6 @@ class KacaPembesarApp:
     def exit_program(self):
         self.cap.release()
         self.root.destroy()
-
-    def __del__(self):
-        self.cap.release()
 
 if __name__ == "__main__":
     root = tk.Tk()
